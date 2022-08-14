@@ -1,0 +1,4 @@
+(executable
+ (public_name ocaml_tsne)
+ (name main)
+ (libraries ocaml_tsne))
