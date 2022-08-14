@@ -1,4 +1,4 @@
 * Opam
 #+begin_src bash
-opam install js_of_ocaml js_of_ocaml-compiler js_of_ocaml-ppx merlin dune
+opam install js_of_ocaml js_of_ocaml-compiler js_of_ocaml-ppx merlin dune cohttp-lwt-unix conduit-lwt ocamlformat
 #+end_src

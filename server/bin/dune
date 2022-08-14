@@ -1,0 +1,9 @@
+(executable
+ (name main)
+ (libraries cohttp-lwt-unix conduit-lwt core))
+
+(rule
+ (targets embedded_files.ml embedded_files.mli)
+ (deps ../../client/main.bc.js)
+ (action
+  (bash "%{bin:ocaml-embed-file} %{deps} -output embedded_files")))
