@@ -16,3 +16,20 @@ let l2 x1 x2 =
   in
   Core.Array.foldi x1 ~init:0. ~f
 ;;
+
+let xtod x =
+  let n = Array.length x in
+  let dist = zeros (n * n) in
+  let f i irow =
+    for j = i + 1 to n - 1 do
+      let jrow = x.(j) in
+      let d = l2 irow jrow in
+      let dij = (i * n) + j in
+      let dji = (j * n) + i in
+      dist.(dij) <- d;
+      dist.(dji) <- d
+    done
+  in
+  Core.Array.iteri x ~f;
+  dist
+;;
