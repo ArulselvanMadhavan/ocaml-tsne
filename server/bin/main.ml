@@ -152,10 +152,14 @@ function loadFile(data_file){
   console.log("Called load file", data_file);
   $.getJSON(data_file, function( j ) {
     data = j;
-    T.init(10,5,2);
     if(data_file.includes("states")) {
+      T.init(10,5,2);
+      T.initDataRaw(data.mat);
+    } else if (data_file.includes("_conf")) {
+      T.init(10,30,2);
       T.initDataRaw(data.mat);
     } else {
+      T.init(10,30,2);
       T.initDataDist(data.mat); // init embedding
     }
     T.initSolution();
@@ -175,9 +179,10 @@ function loadFile(data_file){
 <div class="dropdown">
   <button onclick="myFunction()" class="dropbtn">SelectFile</button>
   <div id="myDropdown" class="dropdown-content">
-    <a href="#home" onclick="loadFile('states.json')">states.json</a>
-    <a href="#about" onclick="loadFile('states_conf.json')">states_conf.json</a>
-    <a href="#contact" onclick="loadFile('coco.json')">coco.json</a>
+    <a href="#states" onclick="loadFile('states.json')">states.json</a>
+    <a href="#states_conf" onclick="loadFile('states_conf.json')">states_conf.json</a>
+    <a href="#coco" onclick="loadFile('coco.json')">coco.json</a>
+    <a href="#coco_conf" onclick="loadFile('coco_conf.json')">coco_conf.json</a>
   </div>
 </div>
         <div id="embed"></div>
@@ -203,7 +208,7 @@ let server port =
     | "/jquery-1.8.3.min.js" | "/d3.min.js" ->
       let path = String.concat "" [ "client/dist"; uri ] in
       respond_file ~content_type:"application/javascript" ~fname:path ()
-    | "/coco.json" | "/states.json" | "/states_conf.json" ->
+    | "/coco.json" | "/states.json" | "/states_conf.json" | "/coco_conf.json" ->
       let path = String.concat "" [ "client/dist"; uri ] in
       respond_file ~content_type:"application/json" ~fname:path ()
     | _ ->

@@ -1,5 +1,6 @@
 import json
 import glob
+import random
 
 def gen_coco():
     
@@ -17,6 +18,21 @@ def gen_coco():
     with open("client/dist/coco.json", "w+") as f:
         json.dump(data, f)
 
+def conf_features():
+    return [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]
+
+def gen_coco_conf():
+    with open("client/dist/coco.json", "r") as f:
+        data = json.load(f)
+    for i in range(0, len(data["mat"])):
+        # conf = conf_features()
+        idx = random.randint(0, 99)
+        entry = [0]*100
+        entry[idx] = 1
+        data["mat"][i] = entry
+    with open("client/dist/coco_conf.json","w+") as f:
+        json.dump(data, f)
+            
 # def gen_coco_labels():
     
 #     with open("client/dist/out2.json", "r") as f:
@@ -24,8 +40,6 @@ def gen_coco():
 
 #     with open("client/data/annotations/captions_val2017.json", "r") as f:
 #         val_data = json.load(f)
-
-# gen_coco()
 
 def build_labels(length):
     result = []
@@ -57,4 +71,6 @@ def gen_states():
     with open("client/dist/states_conf.json", "w+") as f:
         json.dump(data, f)
 
-# gen_states()        
+# gen_coco()        
+# gen_states()    
+gen_coco_conf()
