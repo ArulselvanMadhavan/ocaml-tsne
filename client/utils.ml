@@ -152,13 +152,11 @@ let costgrad dim iter p_out y =
           (fun j _ ->
             let i_idx = (i * n) + j in
             cost := !cost +. (Float.neg p_out.(i_idx) *. Owl_base.Maths.log q.(i_idx));
-            let premult = 4. *. (p_mul *. p_out.(i_idx) -. q.(i_idx)) *. qu.(i_idx) in
-            Printf.printf "P_mul:%f|p_out:%f|q:%f|qu:%f\n" p_mul p_out.(i_idx) q.(i_idx) qu.(i_idx);
-            flush stdout;
+            let premult = 4. *. ((p_mul *. p_out.(i_idx)) -. q.(i_idx)) *. qu.(i_idx) in
             Array.iteri
               (fun d elem ->
-                 let new_grad = elem +. (premult *. (y.(i).(d) -. y.(j).(d))) in
-                 gsum.(d) <- new_grad)
+                let new_grad = elem +. (premult *. (y.(i).(d) -. y.(j).(d))) in
+                gsum.(d) <- new_grad)
               gsum)
           y;
         gsum)

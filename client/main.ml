@@ -72,18 +72,10 @@ let () =
          _self##.iter := _self##.iter + 1;
          let p_out = Js.to_array _self##._P in
          let y = Jsutils.from_2d_arr_jv _self##._Y in
-         print_string "costgrad uses y";
-         print_mat y;
          let cost, grad = Utils.costgrad _self##.dim _self##.iter p_out y in
-         print_string "grad after";
-         print_mat grad;
          let ystep = Jsutils.from_2d_arr_jv _self##.ystep in
          let gains = Jsutils.from_2d_arr_jv _self##.gains in
-         print_mat y;
          Utils.step _self##._N _self##.iter _self##.dim _self##.epsilon ystep gains grad y;
-         print_string "y After step";
-         print_mat y;
-         flush stdout;
          _self##.gains := Jsutils.to_2d_arr gains;
          _self##.ystep := Jsutils.to_2d_arr ystep;
          _self##._Y := Jsutils.to_2d_arr y;
