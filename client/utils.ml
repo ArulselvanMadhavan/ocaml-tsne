@@ -120,40 +120,45 @@ let costgrad dim iter p_out y =
   let p_mul = if iter < 100 then 4. else 1. in
   let qu = zeros (n * n) in
   let qsum = ref 0. in
+  (* N x (i+1) *)
   Array.iteri
     (fun i _ ->
-      Array.iteri
-        (fun j _ ->
-          let dsum =
-            Core.Array.foldi (Array.make dim 0) ~init:0. ~f:(fun d acc _ ->
-              let dhere = y.(i).(d) -. y.(j).(d) in
-              acc +. Owl_base.Maths.sqr dhere)
-          in
-          let quu = 1.0 /. (1.0 +. dsum) in
-          let i_idx = (i * n) + j in
-          let j_idx = (j * n) + i in
-          qu.(i_idx) <- quu;
-          qu.(j_idx) <- quu;
-          qsum := !qsum +. (2. *. quu))
-        y)
+      for j = i + 1 to n - 1 do
+        let dsum =
+          Core.Array.foldi (Array.make dim 0) ~init:0. ~f:(fun d acc _ ->
+            let dhere = y.(i).(d) -. y.(j).(d) in
+            acc +. Owl_base.Maths.sqr dhere)
+        in
+        let quu = 1.0 /. (1.0 +. dsum) in
+        let i_idx = (i * n) + j in
+        let j_idx = (j * n) + i in
+        qu.(i_idx) <- quu;
+        qu.(j_idx) <- quu;
+        qsum := !qsum +. (2. *. quu)
+      done)
     y;
   (* normalize Q distribution to sum to 1 *)
   let q = zeros (n * n) in
-  Array.iteri (fun i elem -> q.(i) <- Float.max (elem /. !qsum) 1e-100) q;
+  let qsum = !qsum in
+  Array.iteri (fun i _ -> q.(i) <- Float.max (qu.(i) /. qsum) 1e-100) q;
   (* cost and grad *)
   let cost = ref 0.0 in
   let grad =
+    (* N x N -> N x D *)
     Array.mapi
       (fun i _ ->
         let gsum = Array.make dim 0.0 in
         Array.iteri
           (fun j _ ->
             let i_idx = (i * n) + j in
-            let cost_temp = p_out.(i_idx) *. Owl_base.Maths.log q.(i_idx) in
-            cost := !cost +. cost_temp;
-            let premult = 4. *. (p_mul *. p_out.(i_idx) *. q.(i_idx)) *. qu.(i_idx) in
+            cost := !cost +. (Float.neg p_out.(i_idx) *. Owl_base.Maths.log q.(i_idx));
+            let premult = 4. *. (p_mul *. p_out.(i_idx) -. q.(i_idx)) *. qu.(i_idx) in
+            Printf.printf "P_mul:%f|p_out:%f|q:%f|qu:%f\n" p_mul p_out.(i_idx) q.(i_idx) qu.(i_idx);
+            flush stdout;
             Array.iteri
-              (fun d elem -> gsum.(d) <- elem +. (premult *. (y.(i).(d) -. y.(j).(d))))
+              (fun d elem ->
+                 let new_grad = elem +. (premult *. (y.(i).(d) -. y.(j).(d))) in
+                 gsum.(d) <- new_grad)
               gsum)
           y;
         gsum)
@@ -200,6 +205,8 @@ let step n iter dim epsilon ystep gains grad y =
 
 let debug_grad dim iter p_out y =
   let _cost, grad = costgrad dim iter p_out y in
+  Printf.printf "Cost and grad:%d|%d\n" (Array.length y) (Array.length y.(0));
+  flush stdout;
   let e = 1e-5 in
   Array.iteri
     (fun i yrow ->

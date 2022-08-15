@@ -1,11 +1,13 @@
 open! Js_of_ocaml
 
-(* let print_mat mat =
- *   Array.iter
- *     (fun v ->
- *       let row = Array.fold_left (fun acc vv -> Printf.sprintf "%s,%f" acc vv) "" v in
- *       Printf.printf "%s\n" row)
- *     mat *)
+let print_mat mat =
+  Array.iter
+    (fun v ->
+      let row = Array.fold_left (fun acc vv -> Printf.sprintf "%s,%f" acc vv) "" v in
+      Printf.printf "%s\n" row)
+    mat
+;;
+
 (* let print_arr arr = Array.iter (fun v -> Printf.printf "%f," v) arr *)
 
 let () =
@@ -39,16 +41,17 @@ let () =
 
        method initDataDist (d : float Js.js_array Js.js_array Js.t) =
          let mat = Jsutils.from_2d_arr d in
+         print_mat mat;
+         flush stdout;
          let n = Array.length mat in
          let dists = Utils.zeros (n * n) in
          Array.iteri
            (fun i _ ->
-             Array.iteri
-               (fun j _ ->
-                 let d = mat.(i).(j) in
-                 dists.((i * n) + j) <- d;
-                 dists.((j * n) + i) <- d)
-               mat)
+             for j = i + 1 to n - 1 do
+               let dd = mat.(i).(j) in
+               dists.((i * n) + j) <- dd;
+               dists.((j * n) + i) <- dd
+             done)
            mat;
          let p_out = Utils.d2p n dists _self##.perplexity 1e-4 in
          _self##._N := n;
@@ -69,10 +72,18 @@ let () =
          _self##.iter := _self##.iter + 1;
          let p_out = Js.to_array _self##._P in
          let y = Jsutils.from_2d_arr_jv _self##._Y in
+         print_string "costgrad uses y";
+         print_mat y;
          let cost, grad = Utils.costgrad _self##.dim _self##.iter p_out y in
+         print_string "grad after";
+         print_mat grad;
          let ystep = Jsutils.from_2d_arr_jv _self##.ystep in
          let gains = Jsutils.from_2d_arr_jv _self##.gains in
+         print_mat y;
          Utils.step _self##._N _self##.iter _self##.dim _self##.epsilon ystep gains grad y;
+         print_string "y After step";
+         print_mat y;
+         flush stdout;
          _self##.gains := Jsutils.to_2d_arr gains;
          _self##.ystep := Jsutils.to_2d_arr ystep;
          _self##._Y := Jsutils.to_2d_arr y;
@@ -84,8 +95,9 @@ let () =
          Utils.debug_grad _self##.dim _self##.iter p_out y
     end)
 ;;
-(* let mat = Utils.randn2d 10 10 in
- * print_mat mat;
- * Printf.printf "L2:%f\n" @@ Utils.l2 mat.(0) mat.(7);
- * Printf.printf "XtoD\n";
- * print_arr (Utils.xtod mat) *)
+
+(* 
+var dists = [[1.0, 0.1, 0.2], [0.1, 1.0, 0.3], [0.2, 0.1, 1.0]];
+tSNE.initDataDist(dists); 
+tSNE.initSolution();
+*)
