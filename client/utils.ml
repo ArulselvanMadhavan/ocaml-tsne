@@ -197,3 +197,23 @@ let step n iter dim epsilon ystep gains grad y =
       Array.iteri (fun d _ -> y.(i).(d) <- y.(i).(d) -. (ymean.(d) /. n)) yrow)
     y
 ;;
+
+let debug_grad dim iter p_out y =
+  let _cost, grad = costgrad dim iter p_out y in
+  let e = 1e-5 in
+  Array.iteri
+    (fun i yrow ->
+      Array.iteri
+        (fun d _ ->
+          let yold = y.(i).(d) in
+          y.(i).(d) <- yold +. e;
+          let cost0, _grad0 = costgrad dim iter p_out y in
+          y.(i).(d) <- yold -. e;
+          let cost1, _grad1 = costgrad dim iter p_out y in
+          let analytic = grad.(i).(d) in
+          let numerical = (cost0 -. cost1) /. (2. *. e) in
+          Printf.printf "i:%d|d:%d|analytic:%f|numerical:%f\n" i d analytic numerical;
+          y.(i).(d) <- yold)
+        yrow)
+    y
+;;

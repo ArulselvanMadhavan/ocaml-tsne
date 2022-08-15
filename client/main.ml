@@ -77,6 +77,11 @@ let () =
          _self##.ystep := Jsutils.to_2d_arr ystep;
          _self##._Y := Jsutils.to_2d_arr y;
          cost
+
+       method debugGrad =
+         let p_out = Js.to_array _self##._P in
+         let y = Jsutils.from_2d_arr_jv _self##._Y in
+         Utils.debug_grad _self##.dim _self##.iter p_out y
     end)
 ;;
 (* let mat = Utils.randn2d 10 10 in

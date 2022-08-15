@@ -15,3 +15,5 @@ val step
   -> float array array
   -> float array array
   -> unit
+
+val debug_grad : int -> int -> float array -> float array array -> unit
