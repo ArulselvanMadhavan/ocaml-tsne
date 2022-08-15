@@ -1,8 +1,11 @@
 let zeros n = Array.make n 0.0
 let randn ~mu ~sigma = Owl_base.Stats.gaussian_rvs ~mu ~sigma
 
-let randn2d n d =
-  Array.init n (fun _ -> Array.init d (fun _ -> randn ~mu:0.0 ~sigma:1e-4))
+let randn2d n d s =
+  Array.init n (fun _ ->
+    if Option.is_some s
+    then Array.make d @@ Option.get s
+    else Array.init d (fun _ -> randn ~mu:0.0 ~sigma:1e-4))
 ;;
 
 let l2 x1 x2 =
@@ -32,4 +35,129 @@ let xtod x =
   in
   Core.Array.iteri x ~f;
   dist
+;;
+
+let d2p n d_arr pplex tol =
+  let h_target = Owl_base.Maths.log pplex in
+  let p_row = zeros n in
+  let p_arr = zeros (n * n) in
+  let f i _val =
+    let betamin = ref Float.neg_infinity in
+    let betamax = ref Float.infinity in
+    let beta = ref 1. in
+    let max_tries = 50 in
+    let rec tryloop num =
+      if num > max_tries
+      then num
+      else (
+        (* kernel row with beta precision *)
+        let calc_kernel_row j psum _val =
+          let pj =
+            if i = j
+            then 0.0
+            else (
+              let d_idx = (i * n) + j in
+              let d_val = Float.neg d_arr.(d_idx) in
+              Owl_base.Maths.exp (d_val *. !beta))
+          in
+          p_row.(j) <- pj;
+          psum +. pj
+        in
+        let psum = Core.Array.foldi p_row ~init:0. ~f:calc_kernel_row in
+        (* normalize p and compute entropy *)
+        let h_here =
+          if psum = 0.
+          then 0.
+          else
+            Core.Array.foldi p_row ~init:0. ~f:(fun j hhere elem ->
+              let pj = elem /. psum in
+              p_row.(j) <- pj;
+              if pj > 1e-7 then hhere -. (pj *. Owl_base.Maths.log pj) else hhere)
+        in
+        (* adjust beta based on result         *)
+        let on_high_entropy () =
+          betamin := !beta;
+          if !betamax == Float.infinity
+          then beta := !beta *. 2.
+          else beta := (!beta +. !betamax) /. 2.
+        in
+        let on_low_entropy () =
+          betamax := !beta;
+          if !betamin == Float.neg_infinity
+          then beta := !beta /. 2.
+          else beta := (!beta +. !betamin) /. 2.
+        in
+        let _ = if h_here > h_target then on_high_entropy () else on_low_entropy () in
+        if Owl_base.Maths.abs (h_here -. h_target) < tol then num else tryloop (num + 1))
+    in
+    let num = tryloop 0 in
+    Printf.printf "i:%d|num:%d\n" i num;
+    Array.iteri
+      (fun j elem ->
+        let i_idx = (i * n) + j in
+        p_arr.(i_idx) <- elem)
+      p_row
+  in
+  Array.iteri f p_row;
+  (* symmetrize P and normalize it to sum to 1 over all ij *)
+  let p_out = zeros (n * n) in
+  let n2 = n * 2 in
+  Array.iteri
+    (fun i _val ->
+      Array.iteri
+        (fun j _val ->
+          let i_idx = (i * n) + j in
+          let j_idx = (j * n) + i in
+          let i_plus_j = p_arr.(i_idx) +. p_arr.(j_idx) in
+          p_out.(i_idx) <- Float.max (i_plus_j /. Float.of_int n2) 1e-100)
+        p_row)
+    p_row;
+  p_out
+;;
+
+let costgrad dim iter p_out y =
+  let n = Array.length y in
+  let p_mul = if iter < 100 then 4. else 1. in
+  let qu = zeros (n * n) in
+  let qsum = ref 0. in
+  Array.iteri
+    (fun i _ ->
+      Array.iteri
+        (fun j _ ->
+          let dsum =
+            Core.Array.foldi (Array.make dim 0) ~init:0. ~f:(fun d acc _ ->
+              let dhere = y.(i).(d) -. y.(j).(d) in
+              acc +. Owl_base.Maths.sqr dhere)
+          in
+          let quu = 1.0 /. (1.0 +. dsum) in
+          let i_idx = (i * n) + j in
+          let j_idx = (j * n) + i in
+          qu.(i_idx) <- quu;
+          qu.(j_idx) <- quu;
+          qsum := !qsum +. (2. *. quu))
+        y)
+    y;
+  (* normalize Q distribution to sum to 1 *)
+  let q = zeros (n * n) in
+  Array.iteri (fun i elem -> q.(i) <- Float.max (elem /. !qsum) 1e-100) q;
+  (* cost and grad *)
+  let cost = ref 0.0 in
+  let grad =
+    Array.mapi
+      (fun i _ ->
+        let gsum = Array.make dim 0.0 in
+        Array.iteri
+          (fun j _ ->
+            let i_idx = (i * n) + j in
+            let cost_temp = p_out.(i_idx) *. Owl_base.Maths.log q.(i_idx) in
+            cost := !cost +. cost_temp;
+            let premult = 4. *. (p_mul *. p_out.(i_idx) *. q.(i_idx)) *. qu.(i_idx) in
+            Array.iteri
+              (fun d elem -> gsum.(d) <- elem +. (premult *. (y.(i).(d) -. y.(j).(d))))
+              gsum)
+          y;
+        gsum)
+      y
+  in
+  cost, grad
 ;;

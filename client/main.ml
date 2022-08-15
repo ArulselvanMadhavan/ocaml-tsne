@@ -14,16 +14,66 @@ let () =
   Js.export
     "tSNE"
     (object%js (_self)
-       val mutable epsilon = 10
-       val mutable perplexity = 30
+       val mutable epsilon = 10.
+       val mutable perplexity = 30.
        val mutable dim = 2
+       val mutable _N = 0
+       val mutable _P = Js.array [||]
+       val mutable _Y = Jv.of_jv_array [||]
+       val mutable gains = Jv.of_jv_array [||]
+       val mutable ystep = Jv.of_jv_array [||]
+       val mutable iter = 0
 
        method init epsilon perplexity dim =
          _self##.dim := dim;
          _self##.epsilon := epsilon;
          _self##.perplexity := perplexity
 
-       method initDataRaw (x : float Js.js_array Js.js_array Js.t) = Jsutils.from_2d_arr x
+       method initDataRaw (x : float Js.js_array Js.js_array Js.t) =
+         let mat = Jsutils.from_2d_arr x in
+         let n = Array.length mat in
+         let dists = Utils.xtod mat in
+         let p_out = Utils.d2p n dists _self##.perplexity 1e-4 in
+         _self##._N := n;
+         _self##._P := Js.array p_out
+
+       method initDataDist (d : float Js.js_array Js.js_array Js.t) =
+         let mat = Jsutils.from_2d_arr d in
+         let n = Array.length mat in
+         let dists = Utils.zeros (n * n) in
+         Array.iteri
+           (fun i _ ->
+             Array.iteri
+               (fun j _ ->
+                 let d = mat.(i).(j) in
+                 dists.((i * n) + j) <- d;
+                 dists.((j * n) + i) <- d)
+               mat)
+           mat;
+         let p_out = Utils.d2p n dists _self##.perplexity 1e-4 in
+         _self##._N := n;
+         _self##._P := Js.array p_out
+
+       method initSolution =
+         let mat = Utils.randn2d _self##._N _self##.dim None in
+         let gains = Utils.randn2d _self##._N _self##.dim @@ Some 1.0 in
+         let ystep = Utils.randn2d _self##._N _self##.dim @@ Some 0.0 in
+         _self##._Y := Jsutils.to_2d_arr mat;
+         _self##.gains := Jsutils.to_2d_arr gains;
+         _self##.ystep := Jsutils.to_2d_arr ystep;
+         _self##.iter := 0
+
+       method getSolution = _self##._Y
+
+       method step =
+         _self##.iter := _self##.iter + 1;
+         let n = _self##._N in
+         let p_out = Js.to_array _self##._P in
+         let y =
+           Jv.to_array (fun v -> Jv.to_array (fun vv -> Jv.to_float vv) v) _self##._Y
+         in
+         let cost, grad = Utils.costgrad _self##.dim _self##.iter p_out y in
+         ()
     end)
 ;;
 (* let mat = Utils.randn2d 10 10 in
