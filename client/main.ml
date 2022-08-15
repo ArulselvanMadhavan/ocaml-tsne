@@ -67,13 +67,16 @@ let () =
 
        method step =
          _self##.iter := _self##.iter + 1;
-         let n = _self##._N in
          let p_out = Js.to_array _self##._P in
-         let y =
-           Jv.to_array (fun v -> Jv.to_array (fun vv -> Jv.to_float vv) v) _self##._Y
-         in
+         let y = Jsutils.from_2d_arr_jv _self##._Y in
          let cost, grad = Utils.costgrad _self##.dim _self##.iter p_out y in
-         ()
+         let ystep = Jsutils.from_2d_arr_jv _self##.ystep in
+         let gains = Jsutils.from_2d_arr_jv _self##.gains in
+         Utils.step _self##._N _self##.iter _self##.dim _self##.epsilon ystep gains grad y;
+         _self##.gains := Jsutils.to_2d_arr gains;
+         _self##.ystep := Jsutils.to_2d_arr ystep;
+         _self##._Y := Jsutils.to_2d_arr y;
+         cost
     end)
 ;;
 (* let mat = Utils.randn2d 10 10 in

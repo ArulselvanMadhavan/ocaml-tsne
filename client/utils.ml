@@ -159,5 +159,41 @@ let costgrad dim iter p_out y =
         gsum)
       y
   in
-  cost, grad
+  !cost, grad
+;;
+
+let step n iter dim epsilon ystep gains grad y =
+  let ymean = zeros dim in
+  (* N x D *)
+  Array.iteri
+    (fun i yrow ->
+      Array.iteri
+        (fun d _ ->
+          let gid = grad.(i).(d) in
+          let sid = ystep.(i).(d) in
+          let gainid = gains.(i).(d) in
+          (* Gain update *)
+          let newgain =
+            if Float.sign_bit gid = Float.sign_bit sid
+            then gainid *. 0.8
+            else gainid +. 0.2
+          in
+          let newgain = if newgain < 0.01 then 0.01 else newgain in
+          gains.(i).(d) <- newgain;
+          (* Momentum step *)
+          let momval = if iter < 250 then 0.5 else 0.8 in
+          let newsid = (momval *. sid) -. (epsilon *. newgain *. grad.(i).(d)) in
+          ystep.(i).(d) <- newsid;
+          (* Step *)
+          y.(i).(d) <- y.(i).(d) +. newsid;
+          ymean.(d) <- ymean.(d) +. y.(i).(d);
+          ())
+        yrow)
+    y;
+  (* Reproject Y to be zero mean *)
+  let n = Float.of_int @@ n in
+  Array.iteri
+    (fun i yrow ->
+      Array.iteri (fun d _ -> y.(i).(d) <- y.(i).(d) -. (ymean.(d) /. n)) yrow)
+    y
 ;;
