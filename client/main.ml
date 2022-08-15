@@ -1,12 +1,11 @@
 open! Js_of_ocaml
 
-let print_mat mat =
-  Array.iter
-    (fun v ->
-      let row = Array.fold_left (fun acc vv -> Printf.sprintf "%s,%f" acc vv) "" v in
-      Printf.printf "%s\n" row)
-    mat
-;;
+(* let print_mat mat =
+ *   Array.iter
+ *     (fun v ->
+ *       let row = Array.fold_left (fun acc vv -> Printf.sprintf "%s,%f" acc vv) "" v in
+ *       Printf.printf "%s\n" row)
+ *     mat *)
 
 (* let print_arr arr = Array.iter (fun v -> Printf.printf "%f," v) arr *)
 
@@ -41,10 +40,10 @@ let () =
 
        method initDataDist (d : float Js.js_array Js.js_array Js.t) =
          let mat = Jsutils.from_2d_arr d in
-         print_mat mat;
-         flush stdout;
          let n = Array.length mat in
          let dists = Utils.zeros (n * n) in
+         Printf.printf "%d|%d\n" (Array.length mat) (Array.length mat.(0));
+         flush stdout;
          Array.iteri
            (fun i _ ->
              for j = i + 1 to n - 1 do
@@ -53,6 +52,7 @@ let () =
                dists.((j * n) + i) <- dd
              done)
            mat;
+         Printf.printf "Reached mat\n";
          let p_out = Utils.d2p n dists _self##.perplexity 1e-4 in
          _self##._N := n;
          _self##._P := Js.array p_out

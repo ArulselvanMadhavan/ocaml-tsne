@@ -12,10 +12,7 @@ let l2 x1 x2 =
   let f idx acc x1i =
     let x2i = x2.(idx) in
     let diff = x1i -. x2i in
-    let sqr_diff = Owl_base.Maths.sqr diff in
-    let acc = acc +. sqr_diff in
-    (* Printf.printf "%f|%f|%f\n" diff sqr_diff acc; *)
-    acc
+    acc +. Owl_base.Maths.sqr diff
   in
   Core.Array.foldi x1 ~init:0. ~f
 ;;
