@@ -23,10 +23,7 @@ let () =
          _self##.epsilon := epsilon;
          _self##.perplexity := perplexity
 
-       method init_raw_data (x : float Js.js_array Js.t) =
-         let arr = Jv.to_array Jv.to_float @@ Jv.repr x in
-         let total = Owl_base.Stats.sum arr in
-         Jv.of_float total
+       method initDataRaw (x : float Js.js_array Js.js_array Js.t) = Jsutils.from_2d_arr x
     end)
 ;;
 (* let mat = Utils.randn2d 10 10 in
