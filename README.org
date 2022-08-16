@@ -1,10 +1,22 @@
 * T-SNE Implementation in OCaml
 - Generates a JS library - tSNE to be used in browsers
 * How to run?
+** To generate dataset for the demo
+#+begin_src bash
+  bash scripts/download-dataset.sh
+  mv data client/data  
+#+end_src
+** On ubuntu/linux
+- Install required packages and then run
 #+begin_src bash
 make run
 #+end_src
+** On Mac
+#+begin_src bash
+  make docker-build-arm
+  make docker-run-arm
+#+end_src
 * Opam
 #+begin_src bash
-opam install js_of_ocaml js_of_ocaml-compiler js_of_ocaml-ppx merlin dune cohttp-lwt-unix conduit-lwt ocamlformat owl owl-plplot
+opam install js_of_ocaml js_of_ocaml-compiler js_of_ocaml-ppx merlin dune cohttp-lwt-unix conduit-lwt ocamlformat owl owl-plplot core opam-embed-file brr
 #+end_src

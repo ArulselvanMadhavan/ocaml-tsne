@@ -215,7 +215,6 @@ let server port =
       if Core.String.is_substring uri ~substring:".jpg"
       then (
         let path = Core.String.drop_prefix uri 1 in
-        print_string path;
         respond_file ~content_type:"application/jpeg" ~fname:path ())
       else respond_string ~content_type:"text/html" ~status:`Not_found ~body:"" ()
   in

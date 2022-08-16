@@ -1,0 +1,28 @@
+version: "3.8"
+services:
+  ocaml_tsne:
+    build:
+      context: .
+      dockerfile: .build/Dockerfile
+      args:
+        REPO: ${REPO}
+        IMAGE_TAG: ${IMAGE_TAG}
+        USER_NAME: ${USER_NAME}
+        UID: ${CURRENT_UID}
+        GID: ${CURRENT_GID}
+        OCAML_COMPILER: ${OCAML_COMPILER}
+        OCAML_COMPILER_MAJOR: ${OCAML_COMPILER_MAJOR}
+    image: localhost:5000/ocaml_tsne
+    container_name: ocaml-tsne-${USER}
+    stdin_open: true
+    tty: true
+    restart: always
+    volumes:
+      - type: bind
+        source: ${MODELS_DIR}
+        target: /home/opam/ocaml-tsne
+      - /home/opam/ocaml-tsne/_build/
+    user: opam:opam
+    ports:
+      - "127.0.0.1:${PORT}:8080"
+    shm_size: 2gb
