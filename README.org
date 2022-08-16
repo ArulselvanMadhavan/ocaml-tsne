@@ -1,9 +1,10 @@
+* T-SNE Implementation in OCaml
+- Generates a JS library - tSNE to be used in browsers
+* How to run?
+#+begin_src bash
+make run
+#+end_src
 * Opam
 #+begin_src bash
 opam install js_of_ocaml js_of_ocaml-compiler js_of_ocaml-ppx merlin dune cohttp-lwt-unix conduit-lwt ocamlformat owl owl-plplot
 #+end_src
-** Javascript
-#+begin_src OCaml
-https://ocsigen.org/js_of_ocaml/latest/manual/rev-bindings
-#+end_src
-- [[https://github.com/OCamlPro/ezjs_cleave/blob/f94e4fd597d04010a79cd745f7ed78bc7ff04b50/src/cleave.ml][JSOO object constructor]]
